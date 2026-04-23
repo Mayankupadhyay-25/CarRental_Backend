@@ -56,7 +56,7 @@ export const loginUser = async (req, res)=>{
 }
 
 // Get User data using Token (JWT)
-export const getUser = async (req, res) => {
+export const getUserData = async (req, res) => {
     try{
         const {user} = req;
         res.json({success: true, user}) 
