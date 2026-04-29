@@ -28,9 +28,7 @@ export const aheckCarAvailability = async (req, res) => {
             })
 
             let availableCars = await Promise.all(availableCarsPromises);
-            
-            availableCars = availableCars.filter(car => car.isAvailable === true)
-
+            availableCars = availableCars.filter(car => car.isAvailable === true) 
             res.json({ success: true, availableCars });
 
         const available = await checkCarAvailability(car, pickupDate, returnDate);
@@ -47,7 +45,6 @@ export const createBooking = async (req, res) => {
         const {_id} = req.user;
         const { car, pickupDate, returnDate, location } = req.body;
       
-
         //check if car is available for the given date
         const isAvailable = await checkCarAvailability(car, pickupDate, returnDate);
         if (!isAvailable) {
@@ -62,7 +59,58 @@ export const createBooking = async (req, res) => {
         const totalPrice = noOfDays * carData.pricePerDay;
 
         await booking.create({car, owner : carData.owner, user: _id, pickupDate, returnDate, price  })
+        res.json({ success: true, message: "Booking Created Successfully" })
        
+    } catch (error) {
+        console.log(error.message);
+        res.json({ success: false, message: error.message });
+    }
+}
+//API to List User Bookings 
+export const getUserBookings = async (req, res) => {
+    try {
+        const {_id} = req.user;
+        const bookings = await booking.find({user: _id}).populate("car").populate("owner").sort({})
+        res.json({ success: true, bookings })
+    } catch (error) {
+        console.log(error.message);
+        res.json({ success: false, message: error.message });
+    }
+}
+
+// API to get owner bookings
+export const getOwnerBookings = async (req, res) => {
+    try {
+        if(req.user.role !== "owner"){
+            return res.json({success: false, message: "Unauthorized"})
+        }
+        const booking  = await booking.find({owner: req.user._id}).populate("car user").select("-user.password")
+        .sort({createdAt: -1})
+        res.json({ success: true, bookings })
+
+    } catch (error) {
+        console.log(error.message);
+        res.json({ success: false, message: error.message });
+    }
+}
+
+// API to change booking status 
+
+export const changeBookingStatus = async (req, res) => {
+    try {
+       const {_id} = req.user;
+       const {bookingId, status} = req.body
+
+       const booking = await Booking.findById(bookingId)
+
+       if(booking.owner.toString() !== _id.toString()){
+            return res.json({success: false, message: "Unauthorized"})
+        }
+
+        booking.status = status;
+        await booking.save();
+
+        res.json({ success: true, message: "Booking Status Updated" })
     } catch (error) {
         console.log(error.message);
         res.json({ success: false, message: error.message });
