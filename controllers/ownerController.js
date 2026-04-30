@@ -1,6 +1,8 @@
 import Car from "../configs/models/Car.js";
 import imagekit from "../configs/imageKit.js";
+import Booking from "../configs/models/Booking.js";
 import User from "../configs/models/User.js"
+
 import fs from "fs"
 
 export const changeRoleToOwner = async (req, res) =>{
@@ -116,11 +118,63 @@ export const getDashboardData = async (req, res) => {
         }
 
         const cars = await Car.find({owner: _id});
+        const bookings = await Booking.find({owner: _id}).populate("car").sort({createdAt: -1});
 
-        
+        const pendingBooking = await Booking.find({owner: _id, status: "pending"})
+         const completedBooking = await Booking.find({owner: _id, status: "pending"})
+
+         // calculate the monthly revenue from bookings where ststus is confirmed 
+         const monthlyRevenue = bookings.slice().filter (booking => booking.status === "confirmed" ).reduce(
+            (acc, booking ) =>acc + booking.price, 0)
+             
+                const dashboardData = {
+                    totalCars: cars.length,
+                    totalBookings: bookings.length,
+                    pendingBookings: pendingBooking.length,
+                    completedBookings: completedBooking.length,
+                    recentBookings:booking.slice(0, 3),
+                    monthlyRevenue: monthlyRevenue
+                }
+                
+                res.json({success: true, dashboardData})
+           
     } catch (error){
         console.log(error.message);
         res.json({success: false, message:error.message})
     }
 
+}
+
+// api to update user image 
+export const updateUserImage = async (req, res) => {
+    try{
+         const {_id } = req.user;
+
+         const imageFile = req.file;
+
+        //upload Image through to ImageKit 
+        const fileBuffer = fs.readFileSync(imageFile.path);
+        const response = await imagekit.upload({
+            file: fileBuffer,
+            fileName: imageFile.originalname,
+            folder: '/users'
+        })
+        fs.unlinkSync(imageFile.path); // delete temp file after upload
+
+        // optimization through imagekit URL transformation
+        const optimizedImageURL = imagekit.url({
+            path: response.filePath,
+            transformation: [
+                { w: '400', q: '80', f: 'webp' }
+            ]
+        });
+        const image = optimizedImageURL;
+
+        await User.findByIdAndUpdate(_id, {image});
+        res.json({success: true, message: "Image Updated"})
+
+    }catch(error) {
+        console.log(error.message);
+        res.json({success: false, message:error.message})
+    }
 }
