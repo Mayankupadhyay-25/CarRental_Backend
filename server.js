@@ -4,6 +4,7 @@ import cors from "cors"; //Cross-Origin Resource Sharing/ It is a browser securi
 import connectDB from "./configs/db.js";
 import userRouter from "./routes/userRoutes.js";
 import ownerRouter from "./routes/ownerRoutes.js";
+import bookingRouter from "./routes/bookingRoutes.js";
 
 //Initialize express app
 const app = express();
@@ -18,6 +19,8 @@ app.use(express.json()); //Parse incoming JSON requests and put the parsed data 
 app.get("/", (req, res) =>res.send ("Server is running"))
 app.use("/api/users", userRouter)
 app.use("/api/owners", ownerRouter)
+app.use("/api/booking", bookingRouter)
+
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server is running on port ${PORT}`));
