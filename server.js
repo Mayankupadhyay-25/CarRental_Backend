@@ -18,7 +18,7 @@ app.use(express.json()); //Parse incoming JSON requests and put the parsed data 
 
 app.get("/", (req, res) =>res.send ("Server is running"))
 app.use("/api/users", userRouter)
-app.use("/api/owners", ownerRouter)
+app.use("/api/owner", ownerRouter)
 app.use("/api/booking", bookingRouter)
 
 
