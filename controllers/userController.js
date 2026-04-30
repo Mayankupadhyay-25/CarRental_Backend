@@ -1,4 +1,5 @@
 import User from "../configs/models/User.js"
+import Car from "../configs/models/Car.js"
 import bcrypt from "bcrypt"
 import jwt from 'jsonwebtoken'
 import imagekit from "../configs/imageKit.js"
@@ -15,21 +16,20 @@ const generateToken = (userId) => {
 export const registerUser = async (req, res)=>{
     try{
         const {name, email, password} = req.body
-
-        if(!name || !email || password.length < 8) {
-            return res.json({sucess:false, message: "Please fill all the fields"})
+        if(!name || !email || !password) {
+            return res.json({success:false, message: "Please fill all the fields"})
         }
-
+        if(password.length < 8) {
+            return res.json({success:false, message: "Password must be at least 8 characters"})
+        }
         const userExists = await User.findOne({email}) 
         if(userExists){
             return res.json({sucess:false, message: "user already exists"})
         }
-
         const hashedPassword = await bcrypt.hash(password, 10)
         const user = await User.create({name, email, password: hashedPassword})
         const token = generateToken(user._id.toString())
         res.json({success: true, token})
-
     } catch (error) {
         console.log(error.message);
         res.json({success: false, message: error.message})
@@ -97,3 +97,17 @@ export const updateUserImage = async (req, res) => {
         res.json({success: false, message: error.message})
     }
 }
+
+// Get all cars from the frontend 
+export const getCars = async (req, res) => {
+    try{
+        const cars = await Car.find({isAvailable: true})
+        res.json({success: true, cars})
+
+    }catch (error) {
+        console.log(error.message);
+        res.json({success: false, message: error.message})
+    } 
+    
+}
+
