@@ -25,6 +25,20 @@ export const addCar = async (req, res) =>{
         let car = JSON.parse(req.body.carData);
         const imageFile = req.file;
 
+        // map frontend field names to model field names
+        const carData = {
+            brand: car.brand,
+            model: car.model,
+            year: car.year,
+            pricePerDay: car.priceperday,
+            category: car.category,
+            transmission: car.transmission,
+            fuel_type: car.fuel_type || car.fuelType,
+            seating_capacity: car.seating_capacity,
+            location: car.location,
+            description: car.description,
+        }
+
         //upload Image through to ImageKit 
         const fileBuffer = fs.readFileSync(imageFile.path);
         const response = await imagekit.upload({
@@ -42,8 +56,8 @@ export const addCar = async (req, res) =>{
             ]
         });
         const image = optimizedImageURL;
-    await Car.create({...car, owner: _id, image})
-    res.json({success: true, message: "Car Added", image})
+        await Car.create({...carData, owner: _id, image})
+        res.json({success: true, message: "Car Added", image})
 
     }catch(error){
         console.log(error.message);
@@ -90,16 +104,16 @@ export const deleteCar = async (req, res) =>{
     try{
         const {_id} = req.user;
         const {carId} = req.body
+
+        if(!carId) return res.json({success: false, message: "Car ID is required"})
+
         const car = await Car.findById(carId)
 
         // Checking is car belongs to the user 
-        if (car.owner.toString() !== _id.toString() ){
+        if (car.owner.toString() !== _id.toString()) {
             return res.json({success: false, message: "Unauthorized"});
         } 
-        car.owner = null;
-        car.isAvailable = false;
-        await car.save()
-
+        await Car.findByIdAndDelete(carId)
         res.json({success: true, message: "Car Removed"})
     }catch (error){
          console.log(error.message);
@@ -132,7 +146,7 @@ export const getDashboardData = async (req, res) => {
                     totalBookings: bookings.length,
                     pendingBookings: pendingBooking.length,
                     completedBookings: completedBooking.length,
-                    recentBookings:booking.slice(0, 3),
+                    recentBookings: bookings.slice(0, 3),
                     monthlyRevenue: monthlyRevenue
                 }
                 
