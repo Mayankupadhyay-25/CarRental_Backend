@@ -134,23 +134,22 @@ export const getDashboardData = async (req, res) => {
         const cars = await Car.find({owner: _id});
         const bookings = await Booking.find({owner: _id}).populate("car").sort({createdAt: -1});
 
-        const pendingBooking = await Booking.find({owner: _id, status: "pending"})
-         const completedBooking = await Booking.find({owner: _id, status: "pending"})
-
-         // calculate the monthly revenue from bookings where ststus is confirmed 
-         const monthlyRevenue = bookings.slice().filter (booking => booking.status === "confirmed" ).reduce(
-            (acc, booking ) =>acc + booking.price, 0)
+        const pendingBookings = bookings.filter(b => b.status === "pending").length
+        const completedBookings = bookings.filter(b => b.status === "confirmed").length
+        const monthlyRevenue = bookings
+            .filter(b => b.status === "confirmed")
+            .reduce((acc, b) => acc + b.price, 0)
              
-                const dashboardData = {
-                    totalCars: cars.length,
-                    totalBookings: bookings.length,
-                    pendingBookings: pendingBooking.length,
-                    completedBookings: completedBooking.length,
-                    recentBookings: bookings.slice(0, 3),
-                    monthlyRevenue: monthlyRevenue
-                }
-                
-                res.json({success: true, dashboardData})
+        const dashboardData = {
+            totalCars: cars.length,
+            totalBookings: bookings.length,
+            pendingBookings,
+            completedBookings,
+            recentBookings: bookings.slice(0, 3),
+            monthlyRevenue
+        }
+        
+        res.json({success: true, dashboardData})
            
     } catch (error){
         console.log(error.message);
