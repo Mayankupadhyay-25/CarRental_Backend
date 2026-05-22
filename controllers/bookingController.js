@@ -55,6 +55,7 @@ export const createBooking = async (req, res) => {
         const price = noOfDays * carData.pricePerDay;
 
         await Booking.create({car, owner: carData.owner, user: _id, pickupDate, returnDate, price})
+        console.log('Booking created with owner:', carData.owner)
         res.json({ success: true, message: "Booking Created Successfully" })
        
     } catch (error) {
@@ -78,11 +79,18 @@ export const getUserBookings = async (req, res) => {
 // API to get owner bookings
 export const getOwnerBookings = async (req, res) => {
     try {
-        if(req.user.role !== "owner"){
+        if(req.user.role !== "owner" && req.user.role !== "Owner"){
             return res.json({success: false, message: "Unauthorized"})
         }
-        const bookings = await Booking.find({owner: req.user._id}).populate("car user").select("-user.password")
+        const bookings = await Booking.find({owner: req.user._id})
+        .populate("car")
+        .populate("user", "-password")
         .sort({createdAt: -1})
+        console.log('getOwnerBookings - owner:', req.user._id.toString(), 'found:', bookings.length)
+        
+        // Debug: also check total bookings in DB
+        const allBookings = await Booking.find({})
+        console.log('Total bookings in DB:', allBookings.length, 'owners:', allBookings.map(b => b.owner?.toString()))
         res.json({ success: true, bookings })
 
     } catch (error) {
