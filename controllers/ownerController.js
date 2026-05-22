@@ -126,13 +126,16 @@ export const deleteCar = async (req, res) =>{
 export const getDashboardData = async (req, res) => {
     try {
         const {_id, role} = req.user;
+        console.log('getDashboardData - user:', _id, 'role:', role)
         
-        if(role !== "owner"){
+        if(role !== "owner" && role !== "Owner"){
+            console.log('Unauthorized - role is:', role)
             return res.json({success: false, message: "Unauthorized"})
         }
 
         const cars = await Car.find({owner: _id});
         const bookings = await Booking.find({owner: _id}).populate("car").sort({createdAt: -1});
+        console.log('Dashboard - owner:', _id, 'cars:', cars.length, 'bookings:', bookings.length)
 
         const pendingBookings = bookings.filter(b => b.status === "pending").length
         const completedBookings = bookings.filter(b => b.status === "confirmed").length
