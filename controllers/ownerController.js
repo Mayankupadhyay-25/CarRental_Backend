@@ -5,23 +5,23 @@ import User from "../configs/models/User.js"
 
 import fs from "fs"
 
-export const changeRoleToOwner = async (req, res) =>{
-    try{
-        const {_id} =req.user;
-        await User.findByIdAndUpdate(_id, {role: "owner"}) 
-        res.json({success: true, message: "now you can list cars"})
-    }catch (error){
+export const changeRoleToOwner = async (req, res) => {
+    try {
+        const { _id } = req.user;
+        await User.findByIdAndUpdate(_id, { role: "owner" })
+        res.json({ success: true, message: "now you can list cars" })
+    } catch (error) {
         console.log(error.message);
-        res.json({success: false, message:error.message})
+        res.json({ success: false, message: error.message })
 
     }
 
 }
 // API to list car
 
-export const addCar = async (req, res) =>{
-    try{
-        const {_id} = req.user;
+export const addCar = async (req, res) => {
+    try {
+        const { _id } = req.user;
         let car = JSON.parse(req.body.carData);
         const imageFile = req.file;
 
@@ -56,68 +56,68 @@ export const addCar = async (req, res) =>{
             ]
         });
         const image = optimizedImageURL;
-        await Car.create({...carData, owner: _id, image})
-        res.json({success: true, message: "Car Added", image})
+        await Car.create({ ...carData, owner: _id, image })
+        res.json({ success: true, message: "Car Added", image })
 
-    }catch(error){
+    } catch (error) {
         console.log(error.message);
-        res.json({success: false, message:error.message})
+        res.json({ success: false, message: error.message })
     }
 }
 
 // API ti list Owner Cars 
-export const getOwnerCars = async (req,res) =>{
-    try{
-        const {_id} = req.user;
-        const cars = await Car.find({owner: _id})
-        res.json({success: true, cars})
-    }catch (error){
-         console.log(error.message);
-        res.json({success: false, message:error.message})
+export const getOwnerCars = async (req, res) => {
+    try {
+        const { _id } = req.user;
+        const cars = await Car.find({ owner: _id })
+        res.json({ success: true, cars })
+    } catch (error) {
+        console.log(error.message);
+        res.json({ success: false, message: error.message })
     }
 }
 // API to Toggle Car Availability 
-export const toggleCarAvailability = async (req, res) =>{
-    try{
-        const {_id} = req.user;
-        const {carId} = req.body
+export const toggleCarAvailability = async (req, res) => {
+    try {
+        const { _id } = req.user;
+        const { carId } = req.body
         const car = await Car.findById(carId)
 
         // Checking is car belongs to the user 
-        if (car.owner.toString() !== _id.toString() ){
-            return res.json({success: false, message: "Unauthorized"});
-        } 
+        if (car.owner.toString() !== _id.toString()) {
+            return res.json({ success: false, message: "Unauthorized" });
+        }
         car.isAvailable = !car.isAvailable;
         await car.save()
 
-        res.json({success: true, message: "Availability Toggled"})
-    }catch (error){
-         console.log(error.message);
-        res.json({success: false, message:error.message})
+        res.json({ success: true, message: "Availability Toggled" })
+    } catch (error) {
+        console.log(error.message);
+        res.json({ success: false, message: error.message })
     }
 
 }
 
 //Api to Delete Car
 
-export const deleteCar = async (req, res) =>{
-    try{
-        const {_id} = req.user;
-        const {carId} = req.body
+export const deleteCar = async (req, res) => {
+    try {
+        const { _id } = req.user;
+        const { carId } = req.body
 
-        if(!carId) return res.json({success: false, message: "Car ID is required"})
+        if (!carId) return res.json({ success: false, message: "Car ID is required" })
 
         const car = await Car.findById(carId)
 
         // Checking is car belongs to the user 
         if (car.owner.toString() !== _id.toString()) {
-            return res.json({success: false, message: "Unauthorized"});
-        } 
+            return res.json({ success: false, message: "Unauthorized" });
+        }
         await Car.findByIdAndDelete(carId)
-        res.json({success: true, message: "Car Removed"})
-    }catch (error){
-         console.log(error.message);
-        res.json({success: false, message:error.message})
+        res.json({ success: true, message: "Car Removed" })
+    } catch (error) {
+        console.log(error.message);
+        res.json({ success: false, message: error.message })
     }
 
 }
@@ -125,16 +125,16 @@ export const deleteCar = async (req, res) =>{
 //API to get Dashboard Data 
 export const getDashboardData = async (req, res) => {
     try {
-        const {_id, role} = req.user;
+        const { _id, role } = req.user;
         console.log('getDashboardData - user:', _id, 'role:', role)
-        
-        if(role !== "owner" && role !== "Owner"){
+
+        if (role !== "owner" && role !== "Owner") {
             console.log('Unauthorized - role is:', role)
-            return res.json({success: false, message: "Unauthorized"})
+            return res.json({ success: false, message: "Unauthorized" })
         }
 
-        const cars = await Car.find({owner: _id});
-        const bookings = await Booking.find({owner: _id}).populate("car").sort({createdAt: -1});
+        const cars = await Car.find({ owner: _id });
+        const bookings = await Booking.find({ owner: _id }).populate("car").sort({ createdAt: -1 });
         console.log('Dashboard - owner:', _id, 'cars:', cars.length, 'bookings:', bookings.length)
 
         const pendingBookings = bookings.filter(b => b.status === "pending").length
@@ -142,7 +142,7 @@ export const getDashboardData = async (req, res) => {
         const monthlyRevenue = bookings
             .filter(b => b.status === "confirmed")
             .reduce((acc, b) => acc + b.price, 0)
-             
+
         const dashboardData = {
             totalCars: cars.length,
             totalBookings: bookings.length,
@@ -151,22 +151,22 @@ export const getDashboardData = async (req, res) => {
             recentBookings: bookings.slice(0, 3),
             monthlyRevenue
         }
-        
-        res.json({success: true, dashboardData})
-           
-    } catch (error){
+
+        res.json({ success: true, dashboardData })
+
+    } catch (error) {
         console.log(error.message);
-        res.json({success: false, message:error.message})
+        res.json({ success: false, message: error.message })
     }
 
 }
 
 // api to update user image 
 export const updateUserImage = async (req, res) => {
-    try{
-         const {_id } = req.user;
+    try {
+        const { _id } = req.user;
 
-         const imageFile = req.file;
+        const imageFile = req.file;
 
         //upload Image through to ImageKit 
         const fileBuffer = fs.readFileSync(imageFile.path);
@@ -186,11 +186,11 @@ export const updateUserImage = async (req, res) => {
         });
         const image = optimizedImageURL;
 
-        await User.findByIdAndUpdate(_id, {image});
-        res.json({success: true, message: "Image Updated"})
+        await User.findByIdAndUpdate(_id, { image });
+        res.json({ success: true, message: "Image Updated" })
 
-    }catch(error) {
+    } catch (error) {
         console.log(error.message);
-        res.json({success: false, message:error.message})
+        res.json({ success: false, message: error.message })
     }
 }

@@ -13,67 +13,68 @@ const generateToken = (userId) => {
 
 
 //Register User
-export const registerUser = async (req, res)=>{
-    try{
-        const {name, email, password} = req.body
-        if(!name || !email || !password) {
-            return res.json({success:false, message: "Please fill all the fields"})
+export const registerUser = async (req, res) => {
+    try {
+        const { name, email, password, role } = req.body
+        if (!name || !email || !password) {
+            return res.json({ success: false, message: "Please fill all the fields" })
         }
-        if(password.length < 8) {
-            return res.json({success:false, message: "Password must be at least 8 characters"})
+        if (password.length < 8) {
+            return res.json({ success: false, message: "Password must be at least 8 characters" })
         }
-        const userExists = await User.findOne({email}) 
-        if(userExists){
-            return res.json({sucess:false, message: "user already exists"})
+        const userExists = await User.findOne({ email })
+        if (userExists) {
+            return res.json({ success: false, message: "User already exists" })
         }
         const hashedPassword = await bcrypt.hash(password, 10)
-        const user = await User.create({name, email, password: hashedPassword})
+        const userRole = (role === "owner" || role === "Owner") ? "owner" : "user"
+        const user = await User.create({ name, email, password: hashedPassword, role: userRole })
         const token = generateToken(user._id.toString())
-        res.json({success: true, token})
+        res.json({ success: true, token, user })
     } catch (error) {
         console.log(error.message);
-        res.json({success: false, message: error.message})
+        res.json({ success: false, message: error.message })
     }
 }
 //Login User
 
-export const loginUser = async (req, res)=>{
-    try{
-        const {email, password} = req.body
-        const user = await User.findOne({email})
-        if(!user){
-            return res.json({sucess:false, message: "Invalid credentials"})
+export const loginUser = async (req, res) => {
+    try {
+        const { email, password } = req.body
+        const user = await User.findOne({ email })
+        if (!user) {
+            return res.json({ success: false, message: "Invalid credentials" })
         }
         const isMatch = await bcrypt.compare(password, user.password)
-        if(!isMatch){
-            return res.json({sucess:false, message: "Invalid credentials"})
+        if (!isMatch) {
+            return res.json({ success: false, message: "Invalid credentials" })
         }
         const token = generateToken(user._id.toString())
-        res.json({success: true, token})
+        res.json({ success: true, token, user })
 
     } catch (error) {
         console.log(error.message);
-        res.json({success: false, message: error.message})
+        res.json({ success: false, message: error.message })
     }
 }
 
 // Get User data using Token (JWT)
 export const getUserData = async (req, res) => {
-    try{
-        const {user} = req;
-        res.json({success: true, user}) 
+    try {
+        const { user } = req;
+        res.json({ success: true, user })
 
-    }catch (error) {
+    } catch (error) {
         console.log(error.message);
-        res.json({success: false, message: error.message})
-    } 
-    
+        res.json({ success: false, message: error.message })
+    }
+
 }
 
 // Update User Profile Image
 export const updateUserImage = async (req, res) => {
     try {
-        const {_id} = req.user;
+        const { _id } = req.user;
         const imageFile = req.file;
 
         const fileBuffer = fs.readFileSync(imageFile.path);
@@ -89,25 +90,25 @@ export const updateUserImage = async (req, res) => {
             transformation: [{ w: '400', q: '80', f: 'webp' }]
         })
 
-        await User.findByIdAndUpdate(_id, {image})
-        res.json({success: true, message: "Image Updated", image})
+        await User.findByIdAndUpdate(_id, { image })
+        res.json({ success: true, message: "Image Updated", image })
 
     } catch (error) {
         console.log(error.message);
-        res.json({success: false, message: error.message})
+        res.json({ success: false, message: error.message })
     }
 }
 
 // Get all cars from the frontend 
 export const getCars = async (req, res) => {
-    try{
-        const cars = await Car.find({isAvailable: true})
-        res.json({success: true, cars})
+    try {
+        const cars = await Car.find({ isAvailable: true })
+        res.json({ success: true, cars })
 
-    }catch (error) {
+    } catch (error) {
         console.log(error.message);
-        res.json({success: false, message: error.message})
-    } 
-    
+        res.json({ success: false, message: error.message })
+    }
+
 }
 

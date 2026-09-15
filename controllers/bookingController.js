@@ -15,9 +15,9 @@ const checkCarAvailability = async (carId, pickupDate, returnDate) => {
 export const checkCarAvailabilityAPI = async (req, res) => {
     try {
         const { location, pickupDate, returnDate } = req.body;
-        
+
         // fetch all cars available for the given location 
-        const cars = await Car.find({ location, isAvailable: true });  
+        const cars = await Car.find({ location, isAvailable: true });
 
         // check car availability for the given date range using promise 
         const availableCarsPromises = cars.map(async (car) => {
@@ -26,7 +26,7 @@ export const checkCarAvailabilityAPI = async (req, res) => {
         })
 
         let availableCars = await Promise.all(availableCarsPromises);
-        availableCars = availableCars.filter(car => car.isAvailable === true) 
+        availableCars = availableCars.filter(car => car.isAvailable === true)
         res.json({ success: true, availableCars });
 
     } catch (error) {
@@ -38,9 +38,9 @@ export const checkCarAvailabilityAPI = async (req, res) => {
 //API to create booking 
 export const createBooking = async (req, res) => {
     try {
-        const {_id} = req.user;
+        const { _id } = req.user;
         const { car, pickupDate, returnDate, location } = req.body;
-      
+
         // check if car is available for the given date
         const isAvailable = await checkCarAvailability(car, pickupDate, returnDate);
         if (!isAvailable) {
@@ -54,10 +54,10 @@ export const createBooking = async (req, res) => {
         const noOfDays = Math.ceil((Math.abs(returned - pickup) / (1000 * 60 * 60 * 24)))
         const price = noOfDays * carData.pricePerDay;
 
-        await Booking.create({car, owner: carData.owner, user: _id, pickupDate, returnDate, price})
+        await Booking.create({ car, owner: carData.owner, user: _id, pickupDate, returnDate, price })
         console.log('Booking created with owner:', carData.owner)
         res.json({ success: true, message: "Booking Created Successfully" })
-       
+
     } catch (error) {
         console.log(error.message);
         res.json({ success: false, message: error.message });
@@ -67,8 +67,8 @@ export const createBooking = async (req, res) => {
 //API to List User Bookings 
 export const getUserBookings = async (req, res) => {
     try {
-        const {_id} = req.user;
-        const bookings = await Booking.find({user: _id}).populate("car").populate("owner").sort({createdAt: -1})
+        const { _id } = req.user;
+        const bookings = await Booking.find({ user: _id }).populate("car").populate("owner").sort({ createdAt: -1 })
         res.json({ success: true, bookings })
     } catch (error) {
         console.log(error.message);
@@ -79,15 +79,15 @@ export const getUserBookings = async (req, res) => {
 // API to get owner bookings
 export const getOwnerBookings = async (req, res) => {
     try {
-        if(req.user.role !== "owner" && req.user.role !== "Owner"){
-            return res.json({success: false, message: "Unauthorized"})
+        if (req.user.role !== "owner" && req.user.role !== "Owner") {
+            return res.json({ success: false, message: "Unauthorized" })
         }
-        const bookings = await Booking.find({owner: req.user._id})
-        .populate("car")
-        .populate("user", "-password")
-        .sort({createdAt: -1})
+        const bookings = await Booking.find({ owner: req.user._id })
+            .populate("car")
+            .populate("user", "-password")
+            .sort({ createdAt: -1 })
         console.log('getOwnerBookings - owner:', req.user._id.toString(), 'found:', bookings.length)
-        
+
         // Debug: also check total bookings in DB
         const allBookings = await Booking.find({})
         console.log('Total bookings in DB:', allBookings.length, 'owners:', allBookings.map(b => b.owner?.toString()))
@@ -102,13 +102,13 @@ export const getOwnerBookings = async (req, res) => {
 // API to change booking status 
 export const changeBookingStatus = async (req, res) => {
     try {
-       const {_id} = req.user;
-       const {bookingId, status} = req.body
+        const { _id } = req.user;
+        const { bookingId, status } = req.body
 
-       const bookingDoc = await Booking.findById(bookingId)
+        const bookingDoc = await Booking.findById(bookingId)
 
-       if(bookingDoc.owner.toString() !== _id.toString()){
-            return res.json({success: false, message: "Unauthorized"})
+        if (bookingDoc.owner.toString() !== _id.toString()) {
+            return res.json({ success: false, message: "Unauthorized" })
         }
 
         bookingDoc.status = status;
